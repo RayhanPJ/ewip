@@ -1,0 +1,75 @@
+<script>
+    $("#filter_delivery").val("<?=$sesi_now?>");
+
+    function checkConfirm() {
+        getListOrder()
+        setTimeout(checkConfirm,60000);
+    }
+
+    $(document).ready(function() {
+        checkConfirm();
+        getListOrder();
+    });
+
+    function filterByDate() {
+        var tanggal = $('#filterTanggal').val()
+        window.location.replace('<?=base_url(); ?>order_timah/activity_supply/'+tanggal);
+    }
+
+    function filterByDelivery() {
+        var tanggal = $('#filterTanggal').val()
+        var sesi = $('#filter_delivery').val()
+        window.location.replace('<?=base_url(); ?>order_timah/activity_supply/'+tanggal+'/'+sesi);
+    }
+
+    function linkPage(i) {
+        var tanggal = $('#filterTanggal').val()
+        var sesi = $('#filter_delivery').val()
+        window.location.replace('<?=base_url(); ?>order_timah/activity_supply/'+tanggal+'/'+sesi+'/'+i);
+    }
+
+    function getListOrder() {
+        var tanggal = $('#filterTanggal').val()
+        $.ajax({
+            type: "GET",
+            url: "<?=base_url(); ?>order_timah/checkConfirm/"+tanggal,
+            async: true,
+			dataType: 'json',
+            success: function(data)
+            {
+                // console.log(data);
+                var i;               
+
+                for (i = data.length - 1; i >= 0; i--) {
+                    if (data[i]['status_supply'] == 'Close') {
+                        var date1 = moment(data[i]['closed_supply']).format('YYYY-MM-DD HH:mm:ss');
+                        var date2 = moment().format('YYYY-MM-DD HH:mm:ss');
+                        var diff = moment.duration(moment(date2).diff(moment(date1)));
+                        var minutes = parseInt(diff.asMinutes());
+                        // console.log(minutes);                        
+
+                        if (data[i]['status'] == 'Open' && minutes > 2) {
+                            $.ajax({
+                                type: "POST",
+                                url: "<?=base_url(); ?>order_timah/autoConfirm",
+                                async: true,
+                                dataType: 'json',
+                                data:{
+                                    id_order:data[i]['id_order'],
+                                },
+                                success: function(data)
+                                {
+                                    console.log("Auto Confirm");
+                                }
+                            });
+                            console.log(data[i]['id_order']);
+                            console.log('auto');
+                            window.location.reload();
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+</script>
